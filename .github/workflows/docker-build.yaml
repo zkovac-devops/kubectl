@@ -38,13 +38,13 @@ jobs:
       - name: Fetch latest docker build version
         id: latest_package_version
         run: |
-          echo 'latest_package_version="$(python3 get_latest_docker_tag.py ${{ env.GITHUB_REPOSITORY }})"' >> $GITHUB_OUTPUT
+          echo 'latest_package_version="$(python3 get_latest_docker_tag.py ${{ env.GITHUB_REPOSITORY }})"' >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Create a new branch if necessary
         run: |
-          if [ "${{ steps.latest_k8s_version.outputs.latest_k8s_version }}" != "${{ steps.latest_package_version.outputs.latest_package_version }}" ]
+          if [ "${{ steps.latest_k8s_version.outputs.latest_k8s_version }}" != "${{ env.latest_package_version }}" ]
           then
             git checkout -b "k8s-${{ steps.k8s.outputs }}"
             git push -u origin "k8s-${{ steps.k8s.outputs }}"
