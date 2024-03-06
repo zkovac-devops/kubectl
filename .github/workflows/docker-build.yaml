@@ -59,7 +59,7 @@ jobs:
             type=gha,scope=sha-${{ github.sha }},mode=max
             type=gha,scope=${{ github.ref_name }},mode=max
           build-args:
-            "K8S_VERSION=${{ steps.latest_k8s_version.outputs.version }}"
+            "KUBECTL_VERSION=${{ steps.latest_k8s_version.outputs.version }}"
           push: true
           tags: ${{ steps.extract-metadata.outputs.tags }}
           labels: ${{ steps.extract-metadata.outputs.labels }}
