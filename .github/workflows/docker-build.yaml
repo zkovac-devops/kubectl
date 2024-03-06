@@ -38,18 +38,13 @@ jobs:
           repository=$REGISTRY/${{ github.repository }}
           echo "repository=${repository,,}" >> $GITHUB_OUTPUT
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: extract-metadata
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.prepare-repository-name.outputs.repository }}
-
       - name: Build and push docker image
         uses: docker/build-push-action@v5
         with:
           platforms: linux/amd64,linux/arm64
           context: .
           file: ./Dockerfile
+          tags: ${{ steps.prepare-repository-name.outputs.repository }}:${{ steps.latest_k8s_version.outputs.version }}
           cache-from: |
             type=gha,scope=sha-${{ github.sha }}
             type=gha,scope=${{ github.ref_name }}
@@ -61,5 +56,4 @@ jobs:
           build-args:
             "KUBECTL_VERSION=${{ steps.latest_k8s_version.outputs.version }}"
           push: true
-          tags: ${{ steps.extract-metadata.outputs.tags }}
           labels: ${{ steps.extract-metadata.outputs.labels }}
