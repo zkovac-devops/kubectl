@@ -2,10 +2,15 @@ name: Build kubectl image
 on:
   schedule:
     - cron: '13 0 * * *' # This will run the job daily at 00:13
-  workflow_dispatch: 
+  workflow_dispatch:
+  push:
+    branches:
+      - main 
 
 env:
   REGISTRY: ghcr.io
+  REGCTL_VERSION: v0.5.7
+  SEMVER_VERSION: 3.4.0
 
 defaults:
   run:
@@ -14,74 +19,87 @@ defaults:
 jobs:
   publish-docker:
     runs-on: ubuntu-latest
-    #strategy:
-    #  matrix:
-    #    k8s_version:
-    #      - v1.28.0
-    #      - v1.28.1
-    #      - v1.28.2
-    #      - v1.28.3
-    #      - v1.28.4
-    #      - v1.28.5
-    #      - v1.28.6
-    #      - v1.28.7
+    strategy:
+      matrix:
+        k8s_version:
+          - v1.28.0
+          - v1.28.1
+          - v1.28.2
+          - v1.28.3
+          - v1.28.4
+          - v1.28.5
+          - v1.28.6
+          - v1.28.7
     #  max-parallel: 1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Fetch latest k8s version
-        id: latest_k8s_version
-        run: |
-          echo "latest_k8s_version=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)" >> $GITHUB_OUTPUT
-
-      - name: Fetch latest docker build version
-        id: latest_package_version
-        run: |
-          echo 'latest_package_version="$(python3 get_latest_docker_tag.py ${{ env.GITHUB_REPOSITORY }})"' >> $GITHUB_ENV
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Create a new branch if necessary
-        run: |
-          if [ "${{ steps.latest_k8s_version.outputs.latest_k8s_version }}" != "${{ env.latest_package_version }}" ]
-          then
-            git checkout -b "k8s-${{ steps.k8s.outputs }}"
-            git push -u origin "k8s-${{ steps.k8s.outputs }}"
-          fi
-
-#      - name: Setup Docker Buildx
-#        uses: docker/setup-buildx-action@v3
-#
-#      - name: Log in to the Container registry
-#        uses: docker/login-action@v3
+#      - name: Setup regctl
+#        uses: regclient/actions/regctl-installer@main
 #        with:
-#          registry: ${{ env.REGISTRY }}
-#          username: ${{ github.actor }}
-#          password: ${{ github.token }}
+#          release: ${{ env.REGCTL_VERSION }}
+#          install-dir: ${{ runner.temp }}/bin
 #
-#      - name: Prepare repository name
-#        id: prepare-repository-name
+#      - name: Setup semver
+#        uses: sap/cs-actions/setup-semver@main
+#        with:
+#          version: ${{ env.SEMVER_VERSION }}
+#          install-directory: ${{ runner.temp }}/bin
+
+#      - name: Log in to the registry
 #        run: |
-#          repository=$REGISTRY/${{ github.repository }}
-#          echo "repository=${repository,,}" >> $GITHUB_OUTPUT
+#          regctl registry login $REGISTRY --user ${{ github.actor }} --pass-stdin <<< ${{ github.token }}
 #
-#      - name: Build and push docker image
-#        uses: docker/build-push-action@v5
-#        with:
-#          platforms: linux/amd64,linux/arm64
-#          context: .
-#          file: ./Dockerfile
-#          tags: ${{ steps.prepare-repository-name.outputs.repository }}:${{ matrix.k8s_version }}
-#          cache-from: |
-#            type=gha,scope=sha-${{ github.sha }}
-#            type=gha,scope=${{ github.ref_name }}
-#            type=gha,scope=${{ github.base_ref || 'main' }}
-#            type=gha,scope=main
-#          cache-to: |
-#            type=gha,scope=sha-${{ github.sha }},mode=max
-#            type=gha,scope=${{ github.ref_name }},mode=max
-#          build-args:
-#            "KUBECTL_VERSION=${{ matrix.k8s_version }}"
-#          push: true
+#      - name: Fetch latest k8s version
+#        id: latest_k8s_version
+#        run: |
+#          echo "latest_k8s_version=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)" >> $GITHUB_OUTPUT
 #
+#      - name: Fetch latest docker build version
+#        id: latest_image_version
+#        run: |
+#          echo "latest_image_version=$(regctl tag list ghcr.io/zkovac-devops/kubectl --limit 1)" >> $GITHUB_OUTPUT
+
+#      - name: Create a new branch if necessary
+#        run: |
+#          if [ "${{ steps.latest_k8s_version.outputs.latest_k8s_version }}" != "${{ env.latest_package_version }}" ]
+#          then
+#            git checkout -b "k8s-${{ steps.k8s.outputs }}"
+#            git push -u origin "k8s-${{ steps.k8s.outputs }}"
+#          fi
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Prepare repository name
+        id: prepare-repository-name
+        run: |
+          repository=$REGISTRY/${{ github.repository }}
+          echo "repository=${repository,,}" >> $GITHUB_OUTPUT
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v5
+        with:
+          platforms: linux/amd64,linux/arm64
+          context: .
+          file: ./Dockerfile
+          tags: ${{ steps.prepare-repository-name.outputs.repository }}:${{ matrix.k8s_version }}
+          cache-from: |
+            type=gha,scope=sha-${{ github.sha }}
+            type=gha,scope=${{ github.ref_name }}
+            type=gha,scope=${{ github.base_ref || 'main' }}
+            type=gha,scope=main
+          cache-to: |
+            type=gha,scope=sha-${{ github.sha }},mode=max
+            type=gha,scope=${{ github.ref_name }},mode=max
+          build-args:
+            "KUBECTL_VERSION=${{ matrix.k8s_version }}"
+          push: true
