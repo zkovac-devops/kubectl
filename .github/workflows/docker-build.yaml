@@ -37,7 +37,7 @@ jobs:
       - name: Fetch latest docker build version
         id: latest
         run: |
-          echo "latestTag=$(python3 get_latest_docker_tag.py ${{ env.GITHUB_REPOSITORY }})" >> $GITHUB_ENV
+          echo 'latestTag="$(python3 get_latest_docker_tag.py ${{ env.GITHUB_REPOSITORY }})"' >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
