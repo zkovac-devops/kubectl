@@ -14,13 +14,24 @@ defaults:
 jobs:
   publish-docker:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        k8s_version:
+          - 1.28.0
+          - 1.28.1
+          - 1.28.2
+          - 1.28.3
+          - 1.28.4
+          - 1.28.5
+          - 1.28.6
+          - 1.28.7
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Fetch latest k8s version
-        id: latest_k8s_version
-        run: echo "version=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)" >> $GITHUB_OUTPUT
+      #- name: Fetch latest k8s version
+      #  id: latest_k8s_version
+      #  run: echo "version=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)" >> $GITHUB_OUTPUT
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -44,7 +55,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: .
           file: ./Dockerfile
-          tags: ${{ steps.prepare-repository-name.outputs.repository }}:${{ steps.latest_k8s_version.outputs.version }}
+          tags: ${{ steps.prepare-repository-name.outputs.repository }}:${{ matrix.k8s_version }}
           cache-from: |
             type=gha,scope=sha-${{ github.sha }}
             type=gha,scope=${{ github.ref_name }}
@@ -54,6 +65,5 @@ jobs:
             type=gha,scope=sha-${{ github.sha }},mode=max
             type=gha,scope=${{ github.ref_name }},mode=max
           build-args:
-            "KUBECTL_VERSION=${{ steps.latest_k8s_version.outputs.version }}"
+            "KUBECTL_VERSION=${{ matrix.k8s_version }}"
           push: true
-          labels: ${{ steps.extract-metadata.outputs.labels }}
