@@ -31,47 +31,55 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Fetch latest k8s version
-        id: k8s
+        id: latest_k8s_version
         run: curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
 
       - name: Fetch latest docker build version
-        id: latest
+        id: latest_package_version
         run: |
           echo 'latestTag="$(python3 get_latest_docker_tag.py ${{ env.GITHUB_REPOSITORY }})"' >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-
-      - name: Prepare repository name
-        id: prepare-repository-name
+      - name: Create a new branch if necessary
         run: |
-          repository=$REGISTRY/${{ github.repository }}
-          echo "repository=${repository,,}" >> $GITHUB_OUTPUT
+          if [ "${{ steps.k8s.outputs }}" != "${{ env.latestTag }}" ]; then
+            git checkout -b "k8s-${{ steps.k8s.outputs }}"
+            git push -u origin "k8s-${{ steps.k8s.outputs }}"
+          fi
 
-      - name: Build and push docker image
-        uses: docker/build-push-action@v5
-        with:
-          platforms: linux/amd64,linux/arm64
-          context: .
-          file: ./Dockerfile
-          tags: ${{ steps.prepare-repository-name.outputs.repository }}:${{ matrix.k8s_version }}
-          cache-from: |
-            type=gha,scope=sha-${{ github.sha }}
-            type=gha,scope=${{ github.ref_name }}
-            type=gha,scope=${{ github.base_ref || 'main' }}
-            type=gha,scope=main
-          cache-to: |
-            type=gha,scope=sha-${{ github.sha }},mode=max
-            type=gha,scope=${{ github.ref_name }},mode=max
-          build-args:
-            "KUBECTL_VERSION=${{ matrix.k8s_version }}"
-          push: true
+#      - name: Setup Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#
+#      - name: Log in to the Container registry
+#        uses: docker/login-action@v3
+#        with:
+#          registry: ${{ env.REGISTRY }}
+#          username: ${{ github.actor }}
+#          password: ${{ github.token }}
+#
+#      - name: Prepare repository name
+#        id: prepare-repository-name
+#        run: |
+#          repository=$REGISTRY/${{ github.repository }}
+#          echo "repository=${repository,,}" >> $GITHUB_OUTPUT
+#
+#      - name: Build and push docker image
+#        uses: docker/build-push-action@v5
+#        with:
+#          platforms: linux/amd64,linux/arm64
+#          context: .
+#          file: ./Dockerfile
+#          tags: ${{ steps.prepare-repository-name.outputs.repository }}:${{ matrix.k8s_version }}
+#          cache-from: |
+#            type=gha,scope=sha-${{ github.sha }}
+#            type=gha,scope=${{ github.ref_name }}
+#            type=gha,scope=${{ github.base_ref || 'main' }}
+#            type=gha,scope=main
+#          cache-to: |
+#            type=gha,scope=sha-${{ github.sha }},mode=max
+#            type=gha,scope=${{ github.ref_name }},mode=max
+#          build-args:
+#            "KUBECTL_VERSION=${{ matrix.k8s_version }}"
+#          push: true
+#
