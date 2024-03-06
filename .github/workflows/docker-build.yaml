@@ -67,7 +67,7 @@ jobs:
           then
             echo "Latest k8s version (${{ steps.latest-k8s-version.outputs.version }}) is lower than latest built image version (${{ steps.latest-image-version.outputs.version }}); skipping build ..."
             exit 0
-          elif [ $(semver compare ${{ steps.latest-k8s-version.outputs.version }} ${{ steps.latest-image-version.outputs.version }}) -eq 0 ]
+          elif [ $(semver compare ${{ steps.latest-k8s-version.outputs.version }} ${{ steps.latest-image-version.outputs.version }}) -gt 0 ]
           then
             echo "Latest k8s version (${{ steps.latest-k8s-version.outputs.version }}) is higher than latest built image version (${{ steps.latest-image-version.outputs.version }}); building ..."
             echo "build_image=true" >> $GITHUB_OUTPUT
