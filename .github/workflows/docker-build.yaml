@@ -23,21 +23,18 @@ jobs:
       matrix:
         k8s_version:
           [
-            v1.26.0,
-            v1.26.1,
-            v1.26.2,
-            v1.26.3,
-            v1.26.4,
-            v1.26.5,
-            v1.26.6,
-            v1.26.7,
-            v1.26.8,
-            v1.26.9,
-            v1.26.10,
-            v1.26.11,
-            v1.26.12,
-            v1.26.13,
-            v1.26.14,
+            v1.27.0,
+            v1.27.1,
+            v1.27.2,
+            v1.27.3,
+            v1.27.4,
+            v1.27.5,
+            v1.27.6,
+            v1.27.7,
+            v1.27.8,
+            v1.27.9,
+            v1.27.10,
+            v1.27.11
           ]
       max-parallel: 1
     steps:
@@ -64,13 +61,16 @@ jobs:
         id: latest_k8s_version
         run: |
           echo "latest_k8s_version=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)" >> $GITHUB_OUTPUT
-          echo "Latest k8s version: ${{ steps.latest_k8s_version.outputs.latest_k8s_version }}"
 
       - name: Fetch latest docker build version
         id: latest_image_version
         run: |
-          echo "latest_image_version=$(regctl tag list ghcr.io/zkovac-devops/kubectl | tail -1)" >> $GITHUB_OUTPUT
-          echo "Latest docker image version: ${{ steps.latest_image_version.outputs.latest_image_version }}"
+          echo "latest_image_version=$(regctl tag list ghcr.io/zkovac-devops/kubectl | sort -V | tail -1)" >> $GITHUB_OUTPUT
+
+      - name: Print both versions
+        run: |
+          echo "Latest k8s version: ${{ steps.latest_k8s_version.outputs.latest_k8s_version }}"
+          echo "Latest image version: ${{ steps.latest_image_version.outputs.latest_image_version }}"
 
       #      - name: Create a new branch if necessary
       #        run: |
