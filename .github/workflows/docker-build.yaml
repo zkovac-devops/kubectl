@@ -53,6 +53,8 @@ jobs:
       - name: Fetch k8s versions
         id: fetch-k8s-versions
         run: |
+          set -ex
+          
           page=1
           while :
           do
