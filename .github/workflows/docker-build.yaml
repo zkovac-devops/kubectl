@@ -53,8 +53,6 @@ jobs:
       - name: Fetch k8s versions
         id: fetch-k8s-versions
         run: |    
-          set +x
-
           page=1
           while :
           do
@@ -73,6 +71,7 @@ jobs:
             sed -i '/^$/d' k8s_released_versions.txt
             ((page=page+1))
           done
+        shell: bash {0}
 
       - name: Fetch built versions
         id: fetch-built-versions
