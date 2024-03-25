@@ -52,9 +52,7 @@ jobs:
 
       - name: Fetch k8s versions
         id: fetch-k8s-versions
-        run: |
-          set -ex
-         
+        run: |    
           page=1
           while :
           do
@@ -65,10 +63,7 @@ jobs:
               --header "X-GitHub-Api-Version: 2022-11-28" \
               "https://api.github.com/repos/kubernetes/kubernetes/tags?page=${page}&per_page=100"
             )
-            tag_names=$(echo "${release_info}" | grep "name" | awk '{ print substr($2, 2, length($2)-3) }')
-  
-            [[ "${tag_names}" == "" ]] && break
-            tag_names=$(echo "$tag_names" | grep -vE 'alpha|beta|rc')
+            tag_names=$(echo "${release_info}" | grep "name" | awk '{ print substr($2, 2, length($2)-3) }' | grep -vE 'alpha|beta|rc')
             echo "${tag_names}" | awk '/^v1\.[2-9][6-9]\..*/||/^v[2-9]\..*/' | sort -V >> k8s_released_versions.txt
             sed -i '/^$/d' k8s_released_versions.txt
             ((page=page+1))
