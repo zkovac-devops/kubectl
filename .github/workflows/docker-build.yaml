@@ -97,6 +97,9 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
