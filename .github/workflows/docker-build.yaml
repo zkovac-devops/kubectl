@@ -81,8 +81,10 @@ jobs:
       - name: Print unbuilt versions and prepare matrix
         id: prepare-matrix
         run: |
-          unbuilt_versions=$(comm -23 <(sort k8s_released_versions.txt) <(sort gh_com_tags.txt))
+          unbuilt_versions=$(comm -23 <(sort k8s_released_versions.txt) <(sort gh_com_tags.txt) | tr '\n' ',' | sed 's/,$//')
+
           [[ "${unbuilt_versions}" == "" ]] && break
+
           echo "Unbuilt versions: $unbuilt_versions"
           echo "matrix={\"k8s-version\":[$(echo $unbuilt_versions | sed 's/\([^,]*\)/"\1"/g')]}" >> $GITHUB_OUTPUT
           echo "build=true" >> $GITHUB_OUTPUT
